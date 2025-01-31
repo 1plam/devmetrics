@@ -1,0 +1,31 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/main ./cmd/devmetrics"
+bin = "./tmp/main"
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "vendor"]
+exclude_regex = ["_test.go"]
+exclude_unchanged = true
+follow_symlink = true
+log = "air.log"
+poll = false
+delay = 1000
+stop_on_error = true
+send_interrupt = false
+kill_delay = 500
+
+[log]
+time = true
+main_only = false
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[screen]
+clear_on_rebuild = true
+keep_scroll = true
