@@ -5,14 +5,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"devmetrics/internal/api/rest/handlers/vcs"
+	vcshandler "devmetrics/internal/api/rest/handlers/vcs"
 )
 
 type Routes struct {
-	vcsHandler *vcs.Handler
+	vcsHandler *vcshandler.Handler
 }
 
-func NewRoutes(vcsHandler *vcs.Handler) *Routes {
+func NewRoutes(vcsHandler *vcshandler.Handler) *Routes {
 	return &Routes{
 		vcsHandler: vcsHandler,
 	}
@@ -28,11 +28,11 @@ func (r *Routes) Setup(app *fiber.App) {
 }
 
 func (r *Routes) setupVCSRoutes(api fiber.Router) {
-	vcs := api.Group("/vcs")
+	vcsGroup := api.Group("/vcs")
 
-	vcs.Get("/:provider/repositories/:owner/:name", r.vcsHandler.GetRepository)
-	vcs.Get("/:provider/repositories/:owner/:name/commits", r.vcsHandler.GetCommits)
-	vcs.Get("/:provider/repositories/:owner/:name/pull-requests", r.vcsHandler.GetPullRequests)
+	vcsGroup.Get("/:provider/repositories/:owner/:name", r.vcsHandler.GetRepository)
+	vcsGroup.Get("/:provider/repositories/:owner/:name/commits", r.vcsHandler.GetCommits)
+	vcsGroup.Get("/:provider/repositories/:owner/:name/pull-requests", r.vcsHandler.GetPullRequests)
 }
 
 func (r *Routes) setupHealthRoutes(api fiber.Router) {
