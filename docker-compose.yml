@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: devmetrics-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=development
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - devmetrics-network
+
+  redis:
+    container_name: devmetrics-redis
+    image: redis:7.4.2-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - devmetrics-network
+
+  postgres:
+    container_name: devmetrics-postgres
+    image: postgres:17.2-alpine
+    environment:
+      - POSTGRES_USER=devmetrics
+      - POSTGRES_PASSWORD=devmetrics
+      - POSTGRES_DB=devmetrics
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - devmetrics-network
+
+networks:
+  devmetrics-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
