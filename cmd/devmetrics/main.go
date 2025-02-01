@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+	"devmetrics/internal/api/rest/server"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	adapter "devmetrics/internal/adapters/vcs"
-	handler "devmetrics/internal/api/rest/handlers/vcs"
-	"devmetrics/internal/api/rest/server"
+	"devmetrics/internal/api/rest/handlers/vcs/github"
+	"devmetrics/internal/api/rest/handlers/vcs/gitlab"
+	"devmetrics/internal/api/rest/routes"
 	"devmetrics/internal/app"
 	"devmetrics/internal/config"
 	domain "devmetrics/internal/domain/vcs"
@@ -34,8 +36,10 @@ func providers() []interface{} {
 		adapter.NewFactory,
 		provideVCSService,
 
-		// HTTP
-		provideVCSHandler,
+		// HTTP Handlers
+		provideGitHubHandler,
+		provideGitLabHandler,
+		provideRoutes,
 		server.NewServer,
 
 		// Application
@@ -55,8 +59,16 @@ func provideVCSService(factory *adapter.Factory) (*vcs.Service, error) {
 	return vcs.NewService(providers), nil
 }
 
-func provideVCSHandler(service *vcs.Service) *handler.Handler {
-	return handler.NewHandler(service)
+func provideGitHubHandler(service *vcs.Service) *github.Handler {
+	return github.NewHandler(service)
+}
+
+func provideGitLabHandler(service *vcs.Service) *gitlab.Handler {
+	return gitlab.NewHandler(service)
+}
+
+func provideRoutes(githubHandler *github.Handler, gitlabHandler *gitlab.Handler) *routes.Routes {
+	return routes.NewRoutes(githubHandler, gitlabHandler)
 }
 
 func buildContainer() *dig.Container {

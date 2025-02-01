@@ -1,28 +1,28 @@
 package routes
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-
-	vcshandler "devmetrics/internal/api/rest/handlers/vcs"
+	"devmetrics/internal/api/rest/handlers/vcs/github"
+	"devmetrics/internal/api/rest/handlers/vcs/gitlab"
 )
 
 type Routes struct {
-	vcsHandler *vcshandler.Handler
+	githubHandler *github.Handler
+	gitlabHandler *gitlab.Handler
 }
 
-func NewRoutes(vcsHandler *vcshandler.Handler) *Routes {
+func NewRoutes(githubHandler *github.Handler, gitlabHandler *gitlab.Handler) *Routes {
 	return &Routes{
-		vcsHandler: vcsHandler,
+		githubHandler: githubHandler,
+		gitlabHandler: gitlabHandler,
 	}
 }
 
 func (r *Routes) Setup(app *fiber.App) {
-	// API version group
 	api := app.Group("/api/v1")
 
-	// Setup different route groups
 	r.setupVCSRoutes(api)
 	r.setupHealthRoutes(api)
 }
@@ -30,9 +30,15 @@ func (r *Routes) Setup(app *fiber.App) {
 func (r *Routes) setupVCSRoutes(api fiber.Router) {
 	vcsGroup := api.Group("/vcs")
 
-	vcsGroup.Get("/:provider/repositories/:owner/:name", r.vcsHandler.GetRepository)
-	vcsGroup.Get("/:provider/repositories/:owner/:name/commits", r.vcsHandler.GetCommits)
-	vcsGroup.Get("/:provider/repositories/:owner/:name/pull-requests", r.vcsHandler.GetPullRequests)
+	gitlabGroup := vcsGroup.Group("/gitlab/projects")
+	gitlabGroup.Get("/:id", r.gitlabHandler.GetRepository)
+	gitlabGroup.Get("/:id/commits", r.gitlabHandler.GetCommits)
+	gitlabGroup.Get("/:id/merge-requests", r.gitlabHandler.GetPullRequests)
+
+	githubGroup := vcsGroup.Group("/github/repositories")
+	githubGroup.Get("/:owner/:name", r.githubHandler.GetRepository)
+	githubGroup.Get("/:owner/:name/commits", r.githubHandler.GetCommits)
+	githubGroup.Get("/:owner/:name/pull-requests", r.githubHandler.GetPullRequests)
 }
 
 func (r *Routes) setupHealthRoutes(api fiber.Router) {

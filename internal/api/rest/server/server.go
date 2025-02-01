@@ -6,7 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
-	"devmetrics/internal/api/rest/handlers/vcs"
+	"devmetrics/internal/api/rest/handlers/vcs/github"
+	"devmetrics/internal/api/rest/handlers/vcs/gitlab"
 	"devmetrics/internal/api/rest/middleware"
 	"devmetrics/internal/api/rest/routes"
 	"devmetrics/internal/config"
@@ -21,14 +22,15 @@ type Server struct {
 
 func NewServer(
 	config *config.Config,
-	vcsHandler *vcs.Handler,
+	githubHandler *github.Handler,
+	gitlabHandler *gitlab.Handler,
 ) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: middleware.ErrorHandler,
 	})
 
 	addr := fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port)
-	routes := routes.NewRoutes(vcsHandler)
+	routes := routes.NewRoutes(githubHandler, gitlabHandler)
 
 	return &Server{
 		app:    app,
