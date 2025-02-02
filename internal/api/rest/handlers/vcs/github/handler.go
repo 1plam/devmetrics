@@ -1,131 +1,85 @@
 package github
 
 import (
-	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
-	"time"
-
+	"devmetrics/internal/api/rest/handlers/vcs/shared"
 	"devmetrics/internal/domain/vcs"
 	service "devmetrics/internal/services/vcs"
+	"fmt"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	service   *service.Service
-	validator *validator.Validate
+	service *service.Service
+	shared.BaseHandler
 }
 
 func NewHandler(service *service.Service) *Handler {
 	return &Handler{
-		service:   service,
-		validator: validator.New(),
+		service:     service,
+		BaseHandler: shared.NewBaseHandler(),
 	}
 }
 
 func (h *Handler) GetRepository(c *fiber.Ctx) error {
-	var req RepoRequest
-	if err := c.ParamsParser(&req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "invalid parameters", err)
+	req := new(RepoRequest)
+	if err := h.ParseAndValidate(c, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "validation failed", err)
-	}
-
-	repoPath := fmt.Sprintf("%s/%s", req.Owner, req.Name)
-	repo, err := h.service.GetRepository(c.Context(), vcs.ProviderGitHub, repoPath)
+	repo, err := h.service.GetRepository(
+		c.Context(),
+		vcs.ProviderGitHub,
+		fmt.Sprintf("%s/%s", req.Owner, req.Name),
+	)
 	if err != nil {
-		return h.handleError(c, err)
+		return h.HandleError(c, err)
 	}
 
-	return c.JSON(fiber.Map{
-		"data": repo,
-	})
+	return h.SendResponse(c, repo)
 }
 
 func (h *Handler) GetCommits(c *fiber.Ctx) error {
-	var req RepoRequest
-	if err := c.ParamsParser(&req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "invalid parameters", err)
+	ctx, cancel := shared.NewTimeoutContext(c.Context(), shared.DefaultTimeout)
+	defer cancel()
+
+	req := new(CommitsRequest)
+	if err := h.ParseAndValidate(c, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "validation failed", err)
-	}
-
-	since := c.Query("since")
-	until := c.Query("until")
-
-	var sinceTime, untilTime time.Time
-	var err error
-
-	if since != "" {
-		sinceTime, err = time.Parse(time.RFC3339, since)
-		if err != nil {
-			return h.errorResponse(c, fiber.StatusBadRequest, "invalid since time", err)
-		}
-	}
-
-	if until != "" {
-		untilTime, err = time.Parse(time.RFC3339, until)
-		if err != nil {
-			return h.errorResponse(c, fiber.StatusBadRequest, "invalid until time", err)
-		}
-	}
-
-	repoPath := fmt.Sprintf("%s/%s", req.Owner, req.Name)
-	commits, err := h.service.GetCommits(c.Context(), vcs.ProviderGitHub, repoPath, sinceTime, untilTime)
+	commits, err := h.service.GetCommits(
+		ctx,
+		vcs.ProviderGitHub,
+		fmt.Sprintf("%s/%s", req.Owner, req.Name),
+		req.GetSinceTime(),
+		req.GetUntilTime(),
+	)
 	if err != nil {
-		return h.handleError(c, err)
+		return h.HandleError(c, err)
 	}
 
-	return c.JSON(fiber.Map{
-		"data": commits,
-	})
+	return h.SendResponse(c, commits)
 }
 
 func (h *Handler) GetPullRequests(c *fiber.Ctx) error {
-	var req RepoRequest
-	if err := c.ParamsParser(&req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "invalid parameters", err)
+	ctx, cancel := shared.NewTimeoutContext(c.Context(), shared.DefaultTimeout)
+	defer cancel()
+
+	req := new(PullRequestsRequest)
+	if err := h.ParseAndValidate(c, req); err != nil {
+		return err
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return h.errorResponse(c, fiber.StatusBadRequest, "validation failed", err)
-	}
-
-	since := c.Query("since")
-	until := c.Query("until")
-	status := c.Query("status")
-
-	if status != "" && !isValidPRStatus(status) {
-		return h.errorResponse(c, fiber.StatusBadRequest, "invalid status", fmt.Errorf("unsupported status: %s", status))
-	}
-
-	var sinceTime, untilTime time.Time
-	var err error
-
-	if since != "" {
-		sinceTime, err = time.Parse(time.RFC3339, since)
-		if err != nil {
-			return h.errorResponse(c, fiber.StatusBadRequest, "invalid since time", err)
-		}
-	}
-
-	if until != "" {
-		untilTime, err = time.Parse(time.RFC3339, until)
-		if err != nil {
-			return h.errorResponse(c, fiber.StatusBadRequest, "invalid until time", err)
-		}
-	}
-
-	repoPath := fmt.Sprintf("%s/%s", req.Owner, req.Name)
-	prs, err := h.service.GetPullRequests(c.Context(), vcs.ProviderGitHub, repoPath, sinceTime, untilTime)
+	prs, err := h.service.GetPullRequests(
+		ctx,
+		vcs.ProviderGitHub,
+		fmt.Sprintf("%s/%s", req.Owner, req.Name),
+		req.GetSinceTime(),
+		req.GetUntilTime(),
+	)
 	if err != nil {
-		return h.handleError(c, err)
+		return h.HandleError(c, err)
 	}
 
-	return c.JSON(fiber.Map{
-		"data": prs,
-	})
+	return h.SendResponse(c, prs)
 }

@@ -40,8 +40,6 @@ func NewAdapter(cfg config.GitHubConfig) (*Adapter, error) {
 func (a *Adapter) GetCommits(ctx context.Context, repo string, since, until time.Time) ([]vcs.Commit, error) {
 	owner, repoName := common.ParseRepoString(repo)
 
-	log.Printf("Getting commits for repo: %s, owner: %s", repo, owner)
-
 	opts := &github.CommitsListOptions{
 		Since: since,
 		Until: until,
@@ -51,15 +49,11 @@ func (a *Adapter) GetCommits(ctx context.Context, repo string, since, until time
 	}
 
 	var allCommits []vcs.Commit
-	start := time.Now()
-
 	for {
 		commits, resp, err := a.client.Repositories.ListCommits(ctx, owner, repoName, opts)
 		if err != nil {
 			return nil, fmt.Errorf("listing commits: %w", err)
 		}
-
-		log.Printf("Fetched commits batch: batch_size=%d, page=%d", len(commits), opts.Page)
 
 		for _, commit := range commits {
 			allCommits = append(allCommits, a.mapCommit(commit, repo))
@@ -71,15 +65,11 @@ func (a *Adapter) GetCommits(ctx context.Context, repo string, since, until time
 		opts.Page = resp.NextPage
 	}
 
-	log.Printf("Successfully fetched all commits: total_commits=%d, duration=%s", len(allCommits), time.Since(start))
-
 	return allCommits, nil
 }
 
 func (a *Adapter) GetPullRequests(ctx context.Context, repo string, since, until time.Time) ([]vcs.PullRequest, error) {
 	owner, repoName := common.ParseRepoString(repo)
-
-	log.Printf("Getting pull requests for repo: %s, owner: %s", repo, owner)
 
 	opts := &github.PullRequestListOptions{
 		State: "all",
@@ -89,8 +79,6 @@ func (a *Adapter) GetPullRequests(ctx context.Context, repo string, since, until
 	}
 
 	var allPRs []vcs.PullRequest
-	start := time.Now()
-
 	for {
 		prs, resp, err := a.client.PullRequests.List(ctx, owner, repoName, opts)
 		if err != nil {
@@ -114,22 +102,16 @@ func (a *Adapter) GetPullRequests(ctx context.Context, repo string, since, until
 		opts.Page = resp.NextPage
 	}
 
-	log.Printf("Successfully fetched all pull requests: total_prs=%d, duration=%s", len(allPRs), time.Since(start))
-
 	return allPRs, nil
 }
 
 func (a *Adapter) GetRepository(ctx context.Context, repo string) (*vcs.Repository, error) {
 	owner, repoName := common.ParseRepoString(repo)
 
-	log.Printf("Getting repository: repo=%s, owner=%s", repo, owner)
-
 	repository, _, err := a.client.Repositories.Get(ctx, owner, repoName)
 	if err != nil {
 		return nil, fmt.Errorf("getting repository: %w", err)
 	}
-
-	log.Println("Successfully fetched repository")
 
 	return a.mapRepository(repository), nil
 }
