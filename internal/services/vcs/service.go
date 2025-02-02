@@ -27,20 +27,42 @@ func (s *Service) GetRepository(ctx context.Context, providerType vcs.ProviderTy
 	return provider.GetRepository(ctx, repo)
 }
 
-func (s *Service) GetCommits(ctx context.Context, providerType vcs.ProviderType, repo string, since, until time.Time) ([]vcs.Commit, error) {
+func (s *Service) GetCommits(
+	ctx context.Context,
+	providerType vcs.ProviderType,
+	repo string,
+	since, until time.Time,
+	offset, limit int,
+) ([]vcs.Commit, int64, error) {
 	provider, ok := s.providers[providerType]
 	if !ok {
-		return nil, fmt.Errorf("unsupported VCS provider: %s", providerType)
+		return nil, 0, fmt.Errorf("unsupported VCS provider: %s", providerType)
 	}
 
-	return provider.GetCommits(ctx, repo, since, until)
+	commits, total, err := provider.GetCommits(ctx, repo, since, until, offset, limit)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get commits: %w", err)
+	}
+
+	return commits, total, nil
 }
 
-func (s *Service) GetPullRequests(ctx context.Context, providerType vcs.ProviderType, repo string, since, until time.Time) ([]vcs.PullRequest, error) {
+func (s *Service) GetPullRequests(
+	ctx context.Context,
+	providerType vcs.ProviderType,
+	repo string,
+	since, until time.Time,
+	offset, limit int,
+) ([]vcs.PullRequest, int64, error) {
 	provider, ok := s.providers[providerType]
 	if !ok {
-		return nil, fmt.Errorf("unsupported VCS provider: %s", providerType)
+		return nil, 0, fmt.Errorf("unsupported VCS provider: %s", providerType)
 	}
 
-	return provider.GetPullRequests(ctx, repo, since, until)
+	prs, total, err := provider.GetPullRequests(ctx, repo, since, until, offset, limit)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get pull requests: %w", err)
+	}
+
+	return prs, total, nil
 }

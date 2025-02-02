@@ -42,6 +42,13 @@ func (h *BaseHandler) SendResponse(c *fiber.Ctx, data interface{}) error {
 	})
 }
 
+func (h *BaseHandler) SendPaginatedResponse(c *fiber.Ctx, data interface{}, pagination PaginationMeta) error {
+	return c.JSON(Response{
+		Data:       data,
+		Pagination: &pagination,
+	})
+}
+
 // ErrorResponse creates and sends an error response
 func (h *BaseHandler) ErrorResponse(c *fiber.Ctx, status int, code, message, details string) error {
 	log.Printf("Error response: %s - %s - %s", code, message, details)

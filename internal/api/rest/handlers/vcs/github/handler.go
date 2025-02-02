@@ -21,7 +21,7 @@ func NewHandler(service *service.Service) *Handler {
 }
 
 func (h *Handler) GetRepository(c *fiber.Ctx) error {
-	req := new(RepoRequest)
+	req := new(RepositoryRequest)
 	if err := h.ParseAndValidate(c, req); err != nil {
 		return err
 	}
@@ -47,18 +47,21 @@ func (h *Handler) GetCommits(c *fiber.Ctx) error {
 		return err
 	}
 
-	commits, err := h.service.GetCommits(
+	commits, total, err := h.service.GetCommits(
 		ctx,
 		vcs.ProviderGitHub,
 		fmt.Sprintf("%s/%s", req.Owner, req.Name),
 		req.GetSinceTime(),
 		req.GetUntilTime(),
+		req.GetOffset(),
+		req.GetPerPage(),
 	)
 	if err != nil {
 		return h.HandleError(c, err)
 	}
 
-	return h.SendResponse(c, commits)
+	pagination := shared.NewPaginationMeta(req.GetPage(), req.GetPerPage(), total)
+	return h.SendPaginatedResponse(c, commits, pagination)
 }
 
 func (h *Handler) GetPullRequests(c *fiber.Ctx) error {
@@ -70,16 +73,19 @@ func (h *Handler) GetPullRequests(c *fiber.Ctx) error {
 		return err
 	}
 
-	prs, err := h.service.GetPullRequests(
+	prs, total, err := h.service.GetPullRequests(
 		ctx,
 		vcs.ProviderGitHub,
 		fmt.Sprintf("%s/%s", req.Owner, req.Name),
 		req.GetSinceTime(),
 		req.GetUntilTime(),
+		req.GetOffset(),
+		req.GetPerPage(),
 	)
 	if err != nil {
 		return h.HandleError(c, err)
 	}
 
-	return h.SendResponse(c, prs)
+	pagination := shared.NewPaginationMeta(req.GetPage(), req.GetPerPage(), total)
+	return h.SendPaginatedResponse(c, prs, pagination)
 }
