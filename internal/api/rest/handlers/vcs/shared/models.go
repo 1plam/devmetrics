@@ -2,16 +2,20 @@ package shared
 
 import "time"
 
-// TimeRangeRequest Base request types that can be embedded in provider-specific requests
 type TimeRangeRequest struct {
 	Since *time.Time `query:"since" validate:"omitempty,ltefield=Until"`
 	Until *time.Time `query:"until" validate:"omitempty"`
 }
 
-// Response Common response types
 type Response struct {
-	Data  interface{}    `json:"data,omitempty"`
-	Error *ErrorResponse `json:"error,omitempty"`
+	Data       interface{}     `json:"data,omitempty"`
+	Error      *ErrorResponse  `json:"error,omitempty"`
+	Pagination *PaginationMeta `json:"pagination,omitempty"`
+}
+
+type PaginatedResponse struct {
+	Data       interface{}    `json:"data"`
+	Pagination PaginationMeta `json:"pagination"`
 }
 
 type ErrorResponse struct {

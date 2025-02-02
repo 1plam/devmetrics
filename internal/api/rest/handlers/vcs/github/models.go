@@ -4,18 +4,20 @@ import (
 	"devmetrics/internal/api/rest/handlers/vcs/shared"
 )
 
-type RepoRequest struct {
+type RepositoryRequest struct {
 	Owner string `params:"owner" validate:"required"`
 	Name  string `params:"name" validate:"required"`
 }
 
 type CommitsRequest struct {
-	RepoRequest
+	RepositoryRequest
 	shared.TimeRangeRequest
+	shared.PaginationRequest
 }
 
 type PullRequestsRequest struct {
-	RepoRequest
+	RepositoryRequest
 	shared.TimeRangeRequest
+	shared.PaginationRequest
 	Status string `query:"status" validate:"omitempty,oneof=open closed merged all"`
 }

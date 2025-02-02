@@ -4,21 +4,19 @@ import (
 	"devmetrics/internal/api/rest/handlers/vcs/shared"
 )
 
-type BaseRequest struct {
+type RepositoryRequest struct {
 	ProjectID int `params:"id" validate:"required"`
 }
 
-type RepositoryRequest struct {
-	BaseRequest
-}
-
 type CommitsRequest struct {
-	BaseRequest
+	RepositoryRequest
 	shared.TimeRangeRequest
+	shared.PaginationRequest
 }
 
 type PullRequestsRequest struct {
-	BaseRequest
+	RepositoryRequest
 	shared.TimeRangeRequest
+	shared.PaginationRequest
 	Status string `query:"status" validate:"omitempty,oneof=all open closed merged" default:"all"`
 }
